@@ -2,7 +2,7 @@
 SHELL = bash
 
 ## the nodeJS command to be run at build time
-NODEJS ?= node
+NODEJS ?= nodejs
 NODEJS_INTERPRETER ?= "/usr/bin/env $(NODEJS)"
 
 PUBLISHTAG = $(shell node scripts/publish-tag.js)
