@@ -3,6 +3,7 @@ SHELL = bash
 
 ## the nodeJS command to be run at build time
 NODEJS ?= node
+NODEJS_INTERPRETER ?= "/usr/bin/env $(NODEJS)"
 
 PUBLISHTAG = $(shell node scripts/publish-tag.js)
 BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
@@ -72,29 +73,30 @@ endif
 
 all: doc
 
-latest:
+latest:	preprocess
 	@echo "Installing latest published npm"
 	@echo "Use 'make install' or 'make link' to install the code"
 	@echo "in this folder that you're looking at right now."
 	$(call npm-local-install) -g -f $(NPM_INSTALL_OPT) npm ${NPMOPTS}
 
-install: all
+install: all preprocess
 	$(call npm-local-install) -g -f $(NPM_INSTALL_OPT) ${NPMOPTS}
 
 # backwards compat
 dev: install
 
-link: uninstall
+link: uninstall preprocess
 	$(call npm-local) link -f
 
-clean: markedclean marked-manclean doc-clean
+clean: preprocess markedclean marked-manclean doc-clean
 	rm -rf npmrc
-	$(call npm-local) cache clean
+	-$(call npm-local) cache clean
+	$(MAKE) preprocess-clean
 
-uninstall:
+uninstall: preprocess
 	$(call npm-local) rm npm -g -f
 
-doc: $(mandocs) $(htmldocs)
+doc: preprocess $(mandocs) $(htmldocs)
 
 markedclean:
 	rm -rf node_modules/marked node_modules/.bin/marked .building_marked
@@ -112,7 +114,8 @@ doc-clean:
 
 ## build-time tools for the documentation
 build-doc-tools := node_modules/.bin/marked \
-                   node_modules/.bin/marked-man
+                   node_modules/.bin/marked-man \
+                   $(PREPROCESS_OUT)
 
 # use `npm install marked-man` for this to work.
 man/man1/npm-README.1: README.md scripts/doc-build.sh package.json $(build-doc-tools)
@@ -160,22 +163,22 @@ html/doc/misc/%.html: doc/misc/%.md $(html_docdeps) $(build-doc-tools)
 
 marked: node_modules/.bin/marked
 
-node_modules/.bin/marked:
+node_modules/.bin/marked: preprocess
 	$(call npm-local-install) marked --no-global --no-timing
 
 marked-man: node_modules/.bin/marked-man
 
-node_modules/.bin/marked-man:
+node_modules/.bin/marked-man: preprocess
 	$(call npm-local-install) marked-man --no-global --no-timing
 
 doc: man
 
 man: $(cli_docs)
 
-test: doc
+test: preprocess doc
 	$(call npm-local) test
 
-tag:
+tag: preprocess
 	$(call npm-local) tag npm@$(PUBLISHTAG) latest
 
 ls-ok:
@@ -184,17 +187,42 @@ ls-ok:
 gitclean:
 	git clean -fd
 
-publish: gitclean ls-ok link doc-clean doc
+publish: gitclean ls-ok link doc-clean doc preprocess
 	@git push origin :v$(shell $(call npm-local) --no-timing -v) 2>&1 || true
 	git push origin $(BRANCH) &&\
 	git push origin --tags &&\
 	$(call npm-local) publish --tag=$(PUBLISHTAG)
 
-release: gitclean ls-ok markedclean marked-manclean doc-clean doc
+release: gitclean ls-ok markedclean marked-manclean doc-clean doc preprocess
 	$(call npm-local) prune --production
 	@bash scripts/release.sh
 
 sandwich:
 	@[ $$(whoami) = "root" ] && (echo "ok"; echo "ham" > sandwich) || (echo "make it yourself" && exit 13)
 
-.PHONY: all latest install dev link doc clean uninstall test man doc-clean docclean release ls-ok realclean
+## generate executable scripts with nodejs command
+PREPROCESS_IN  := \
+	$(shell find bin node_modules scripts test/tap -type f -name "*.prepro.in") \
+	package.json.prepro.in
+PREPROCESS_OUT := $(patsubst %.prepro.in,%,$(PREPROCESS_IN))
+
+define preproc
+	@echo "Transforming $< to $@"
+	@cat $< | sed -e 's~@@NODEJS_INTERPRETER@@~$(NODEJS_INTERPRETER)~g;' \
+	       | sed -e 's~@@NODEJS@@~$(NODEJS)~g;' > $@
+	@chmod "$@" --reference="$<"
+endef
+
+%:	%.prepro.in
+	$(call preproc)
+
+scripts/%:	scripts/%.prepro.in
+	$(call preproc)
+
+preprocess: $(PREPROCESS_OUT)
+
+preprocess-clean:
+	@rm -f $(PREPROCESS_OUT)
+
+.PHONY: all latest install dev link doc clean uninstall test man doc-clean docclean release ls-ok realclean \
+        preprocess preprocess-clean
