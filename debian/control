@@ -1,0 +1,30 @@
+Source: npm
+Section: web
+Priority: extra
+Maintainer: Debian Javascript Maintainers <pkg-javascript-devel@lists.alioth.debian.org>
+Uploaders: Jérémy Lal <kapouer@melix.org>,
+ Jonas Smedegaard <dr@jones.dk>
+Build-Depends: cdbs,
+ debhelper,
+ dh-buildinfo,
+ bash-completion,
+ nodejs
+Standards-Version: 3.9.5
+Homepage: http://github.com/isaacs/npm
+Vcs-Git: git://anonscm.debian.org/pkg-javascript/npm.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-javascript/npm.git
+
+Package: npm
+Architecture: all
+Depends: nodejs,
+ ${misc:Depends},
+Description: package manager for Node.js
+ Node.js is an event-based server-side javascript engine.
+ .
+ npm is the package manager for the Node JavaScript platform.  It puts
+ modules in place so that node can find them, and manages dependency
+ conflicts intelligently.
+ .
+ It is extremely configurable to support a wide variety of use cases.
+ Most commonly, it is used to publish, discover, install, and develop
+ node programs.

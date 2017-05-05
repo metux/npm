@@ -1,0 +1,9 @@
+copyright_newhints
+files
+npm/
+npm.debhelper.log
+npm.substvars
+stamp-copyright-check
+stamp-makefile-build
+stamp-makefile-install
+stamp-upstream-cruft
