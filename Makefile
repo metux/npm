@@ -67,7 +67,7 @@ dev: install
 link: uninstall
 	$(NODEJS) cli.js link -f
 
-clean: markedclean marked-manclean doc-clean uninstall
+clean: markedclean marked-manclean doc-clean
 	rm -rf npmrc
 	$(NODEJS) cli.js cache clean
 
