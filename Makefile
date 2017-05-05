@@ -50,6 +50,13 @@ mandocs = $(cli_mandocs) $(files_mandocs) $(misc_mandocs)
 
 htmldocs = $(cli_htmldocs) $(files_htmldocs) $(misc_htmldocs)
 
+## command for building the docs
+define build-docs
+@echo "Building manpage: $@"
+@mkdir -p $(dir $@)
+@NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+endef
+
 all: doc
 
 latest:
@@ -96,12 +103,10 @@ build-doc-tools := node_modules/.bin/marked \
 
 # use `npm install marked-man` for this to work.
 man/man1/npm-README.1: README.md scripts/doc-build.sh package.json $(build-doc-tools)
-	@[ -d man/man1 ] || mkdir -p man/man1
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 man/man1/%.1: doc/cli/%.md scripts/doc-build.sh package.json $(build-doc-tools)
-	@[ -d man/man1 ] || mkdir -p man/man1
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 man/man5/npm-json.5: man/man5/package.json.5
 	cp $< $@
@@ -110,27 +115,22 @@ man/man5/npm-global.5: man/man5/npm-folders.5
 	cp $< $@
 
 man/man5/%.5: doc/files/%.md scripts/doc-build.sh package.json $(build-doc-tools)
-	@[ -d man/man5 ] || mkdir -p man/man5
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 doc/misc/npm-index.md: scripts/index-build.js package.json $(build-doc-tools)
 	$(NODEJS) scripts/index-build.js > $@
 
 html/doc/index.html: doc/misc/npm-index.md $(html_docdeps) $(build-doc-tools)
-	@[ -d html/doc ] || mkdir -p html/doc
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 man/man7/%.7: doc/misc/%.md scripts/doc-build.sh package.json $(build-doc-tools)
-	@[ -d man/man7 ] || mkdir -p man/man7
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 html/doc/README.html: README.md $(html_docdeps) $(build-doc-tools)
-	@[ -d html/doc ] || mkdir -p html/doc
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 html/doc/cli/%.html: doc/cli/%.md $(html_docdeps) $(build-doc-tools)
-	@[ -d html/doc/cli ] || mkdir -p html/doc/cli
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 html/doc/files/npm-json.html: html/doc/files/package.json.html
 	cp $< $@
@@ -139,12 +139,10 @@ html/doc/files/npm-global.html: html/doc/files/npm-folders.html
 	cp $< $@
 
 html/doc/files/%.html: doc/files/%.md $(html_docdeps) $(build-doc-tools)
-	@[ -d html/doc/files ] || mkdir -p html/doc/files
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 html/doc/misc/%.html: doc/misc/%.md $(html_docdeps) $(build-doc-tools)
-	@[ -d html/doc/misc ] || mkdir -p html/doc/misc
-	NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
+	$(call build-docs)
 
 
 marked: node_modules/.bin/marked
