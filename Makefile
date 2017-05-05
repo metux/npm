@@ -57,29 +57,38 @@ define build-docs
 @NODEJS="$(NODEJS)" scripts/doc-build.sh $< $@
 endef
 
+## command for calling the local (build-time) npm cli
+define npm-local
+$(NODEJS) bin/npm-cli.js
+endef
+
+define npm-local-install
+$(call npm-local) install
+endef
+
 all: doc
 
 latest:
 	@echo "Installing latest published npm"
 	@echo "Use 'make install' or 'make link' to install the code"
 	@echo "in this folder that you're looking at right now."
-	$(NODEJS) cli.js install -g -f npm ${NPMOPTS}
+	$(call npm-local-install) -g -f npm ${NPMOPTS}
 
 install: all
-	$(NODEJS) cli.js install -g -f ${NPMOPTS}
+	$(call npm-local-install) -g -f ${NPMOPTS}
 
 # backwards compat
 dev: install
 
 link: uninstall
-	$(NODEJS) cli.js link -f
+	$(call npm-local) link -f
 
 clean: markedclean marked-manclean doc-clean
 	rm -rf npmrc
-	$(NODEJS) cli.js cache clean
+	$(call npm-local) cache clean
 
 uninstall:
-	$(NODEJS) cli.js rm npm -g -f
+	$(call npm-local) rm npm -g -f
 
 doc: $(mandocs) $(htmldocs)
 
@@ -148,22 +157,22 @@ html/doc/misc/%.html: doc/misc/%.md $(html_docdeps) $(build-doc-tools)
 marked: node_modules/.bin/marked
 
 node_modules/.bin/marked:
-	$(NODEJS) cli.js install marked --no-global --no-timing
+	$(call npm-local-install) marked --no-global --no-timing
 
 marked-man: node_modules/.bin/marked-man
 
 node_modules/.bin/marked-man:
-	$(NODEJS) cli.js install marked-man --no-global --no-timing
+	$(call npm-local-install) marked-man --no-global --no-timing
 
 doc: man
 
 man: $(cli_docs)
 
 test: doc
-	$(NODEJS) cli.js test
+	$(call npm-local) test
 
 tag:
-	$(NODEJS) bin/npm-cli.js tag npm@$(PUBLISHTAG) latest
+	$(call npm-local) tag npm@$(PUBLISHTAG) latest
 
 ls-ok:
 	$(NODEJS) . ls >/dev/null
@@ -172,13 +181,13 @@ gitclean:
 	git clean -fd
 
 publish: gitclean ls-ok link doc-clean doc
-	@git push origin :v$(shell $(NODEJS) bin/npm-cli.js --no-timing -v) 2>&1 || true
+	@git push origin :v$(shell $(call npm-local) --no-timing -v) 2>&1 || true
 	git push origin $(BRANCH) &&\
 	git push origin --tags &&\
-	$(NODEJS) bin/npm-cli.js publish --tag=$(PUBLISHTAG)
+	$(call npm-local) publish --tag=$(PUBLISHTAG)
 
 release: gitclean ls-ok markedclean marked-manclean doc-clean doc
-	$(NODEJS) cli.js prune --production
+	$(call npm-local) prune --production
 	@bash scripts/release.sh
 
 sandwich:
