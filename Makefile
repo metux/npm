@@ -88,7 +88,7 @@ dev: install
 link: uninstall preprocess
 	$(call npm-local) link -f
 
-clean: preprocess markedclean marked-manclean doc-clean
+clean: preprocess doc-clean
 	rm -rf npmrc
 	-$(call npm-local) cache clean
 	$(MAKE) preprocess-clean
@@ -98,26 +98,15 @@ uninstall: preprocess
 
 doc: preprocess $(mandocs) $(htmldocs)
 
-markedclean:
-	rm -rf node_modules/marked node_modules/.bin/marked .building_marked
-
-marked-manclean:
-	rm -rf node_modules/marked-man node_modules/.bin/marked-man .building_marked-man
-
 docclean: doc-clean
 doc-clean:
 	rm -rf \
-    .building_marked \
-    .building_marked-man \
     html/doc \
     man
 
 ## build-time tools for the documentation
-build-doc-tools := node_modules/.bin/marked \
-                   node_modules/.bin/marked-man \
-                   $(PREPROCESS_OUT)
+build-doc-tools := $(PREPROCESS_OUT)
 
-# use `npm install marked-man` for this to work.
 man/man1/npm-README.1: README.md scripts/doc-build.sh package.json $(build-doc-tools)
 	$(call build-docs)
 
@@ -160,17 +149,6 @@ html/doc/files/%.html: doc/files/%.md $(html_docdeps) $(build-doc-tools)
 html/doc/misc/%.html: doc/misc/%.md $(html_docdeps) $(build-doc-tools)
 	$(call build-docs)
 
-
-marked: node_modules/.bin/marked
-
-node_modules/.bin/marked: preprocess
-	$(call npm-local-install) marked --no-global --no-timing
-
-marked-man: node_modules/.bin/marked-man
-
-node_modules/.bin/marked-man: preprocess
-	$(call npm-local-install) marked-man --no-global --no-timing
-
 doc: man
 
 man: $(cli_docs)
@@ -193,7 +171,7 @@ publish: gitclean ls-ok link doc-clean doc preprocess
 	git push origin --tags &&\
 	$(call npm-local) publish --tag=$(PUBLISHTAG)
 
-release: gitclean ls-ok markedclean marked-manclean doc-clean doc preprocess
+release: gitclean ls-ok doc-clean doc preprocess
 	$(call npm-local) prune --production
 	@bash scripts/release.sh
 
