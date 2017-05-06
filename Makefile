@@ -66,16 +66,20 @@ define npm-local-install
 $(call npm-local) install
 endef
 
+ifdef NODEJS_LIB_DIR
+NPM_INSTALL_OPT = --prefix "$(DESTDIR)$(NODEJS_LIB_DIR)"
+endif
+
 all: doc
 
 latest:
 	@echo "Installing latest published npm"
 	@echo "Use 'make install' or 'make link' to install the code"
 	@echo "in this folder that you're looking at right now."
-	$(call npm-local-install) -g -f npm ${NPMOPTS}
+	$(call npm-local-install) -g -f $(NPM_INSTALL_OPT) npm ${NPMOPTS}
 
 install: all
-	$(call npm-local-install) -g -f ${NPMOPTS}
+	$(call npm-local-install) -g -f $(NPM_INSTALL_OPT) ${NPMOPTS}
 
 # backwards compat
 dev: install
